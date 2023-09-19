@@ -1,0 +1,7 @@
+certs/*
+config/credentials.json
+config/db.json
+
+controllers/__pycache__
+routers/__pycache__
+utils/__pycache__

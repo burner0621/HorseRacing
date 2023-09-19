@@ -1,0 +1,6 @@
+{
+    "username": "db_username",
+    "password": "db_password",
+    "dbname": "db_name",
+    "host": "db_host"
+}

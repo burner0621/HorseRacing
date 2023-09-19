@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: Inter;
+}
+
+.track-row {
+  @apply grid grid-flow-col grid-cols-12 gap-[1px]
+}
+
+.track-header {
+  @apply col-span-2 p-5 bg-pink-1 text-base font-bold text-black-1
+}
+
+.track-header-item {
+  @apply p-5 bg-pink-1 text-center text-base font-bold text-black-1
+}
+
+.track-body-header {
+  @apply col-span-2 flex flex-row items-center px-5 py-6 bg-pink-1 text-base font-normal text-black-1
+}
+
+.track-body-item {
+  @apply p-5 flex flex-row items-center justify-center text-center text-base font-normal bg-pink-1
+}
+
+.race-table-header {
+  @apply grid grid-cols-14 gap-[1px]
+}
+
+.race-table-header-item-1 {
+  @apply p-5 text-black-2 text-base font-bold bg-pink-1
+}
+
+.race-table-header-item-2 {
+  @apply col-span-2 p-5 text-black-2 text-base font-bold bg-pink-1
+}
+
+.race-table-body {
+  @apply grid grid-flow-row gap-[1px]
+}
+
+.race-table-row {
+  @apply grid grid-cols-14 gap-[1px]
+}
+
+.race-table-col-1 {
+  @apply p-5 text-black-2 text-base font-normal leading-6 bg-pink-1
+}
+
+.race-table-col-2 {
+  @apply col-span-2 p-5 text-black-2 text-base font-normal leading-6 bg-pink-1
+}
+
+.selection-table-header {
+  @apply grid grid-cols-12 gap-[1px]
+}
+
+.selection-table-row {
+  @apply grid grid-cols-12 gap-[1px]
+}
+
+.chart-dropdown-button {
+  @apply text-black-2 bg-white font-medium rounded-[5px] border border-grey-1 text-sm pl-4 py-2.5 flex flex-row justify-between items-center w-[200px] h-8
+}
