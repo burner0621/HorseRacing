@@ -6,9 +6,9 @@ import numpy as np
 import os
 import datetime
 import json
+import logging
 
 trading = None
-
 
 def login():
     try:
@@ -19,32 +19,20 @@ def login():
 
 
 def connectDatabase():
-    import mysql.connector
+    from mongoengine import connect
     try:
         with open('./config/db.json') as f:
             dbConfig = json.load(f)
-            username = dbConfig['username']
-            password = dbConfig['password']
-            dbname = dbConfig['dbname']
-            host = dbConfig['host']
+            mongoUri = dbConfig['mongoUri']
+        try:
+            connect (mongoUri)
+            print("===   Database Connection successful.   ===")
+        except Exception as e:
+            print(f"Database connection failed. {str(e)}")
+            return
     except Exception as e:
         print(f"config/db.json file read failed. {str(e)}")
         return
-
-    try:
-        mydb = mysql.connector.connect(
-            host=host,
-            user=username,
-            password=password,
-            database=dbname
-        )
-        print("===   Database Connection successful.   ===")
-    except Exception as e:
-        print(f"Database connection failed. {str(e)}")
-        return
-
-    return mydb
-
 
 def getCountries():
     countries = trading.betting.list_countries()
@@ -54,6 +42,59 @@ def getCountries():
     }).set_index('Country').sort_index()
 
     return countries
+
+def getListMarketCatalog(maxNum, eventIds):
+    mf = makeMarketFilter(eventIds=eventIds)
+    try:
+        market_catalogues = trading.betting.list_market_catalogue(
+            filter=mf,
+            max_results='100',
+            sort='FIRST_TO_START'
+        )
+        rlt  = []
+        for mc in market_catalogues:
+            tmp = {
+                'marketName': mc.market_name,
+                'marketId': mc.market_id,
+                'marketStartTime': mc.market_start_time, # datetime.datetime
+                'total_matched': mc.total_matched,
+                'competition': {
+                    'id': mc.competition.id,
+                    'name': mc.competition.name
+                },
+                'marketCatalogueDescription': {
+                    'bettingType': mc.description.betting_type,
+                    'bspMarket': mc.description.bsp_market,
+                    'clarifications': mc.description.clarifications,
+                    'discountAllowed': mc.description.discountAllowed, #bool
+                    'eachWayDivisor': mc.description.each_way_divisor,
+                    'marketBaseRate': mc.description.market_base_rate,
+                    'marketTime': mc.description.market_time, #datetime.datetime
+                    'marketType': mc.description.marketType,
+                    'persistenceEnalbled': mc.description.persistence_enalbled, #bool
+                    'regulator': mc.description.regulator,
+                    'rules': mc.description.rules,
+                    'rulesHasDate': mc.description.rulesHasDate, #bool
+                    'suspendTime': mc.description.suspendTime,
+                    'turnInPlayEenabled': mc.description.turn_in_play_enabled, #bool
+                    'wallet': mc.description.wallet
+                }
+            }
+            tmpRunners = []
+            for runner in mc.runners:
+                tmpRunner = {
+                    "handicap": runner.handicap,
+                    "metadata": runner.metadata,
+                    "runnerName": runner.runner_name,
+                    "selectionId": runner.selection_id,
+                    "sortPriority": runner.sort_priority
+                }
+                tmpRunners.append (tmpRunner)
+            tmp['runners'] = tmpRunners
+            rlt.append (tmp)
+    except Exception as e:
+        print ()    
+    return tmp
 
 
 def makeMarketFilter(
@@ -95,8 +136,29 @@ def makeMarketFilter(
 '''
     cc: country code ====>  e.x   cc: AU
 '''
-def getEvents(cc):
-    print ("fff")
+def getEvents(cc, eventTypeIds):
+    cList = getCountries()
+    if cc not in [country['Country'] for country in cList]:
+        return {"success": False, "msg": "CountryCode is wrong."}
+     
+    mf = makeMarketFilter(
+            marketCountries=[cc],
+            eventTypeIds=eventTypeIds,
+        )
+    events = trading.betting.list_events(filter=mf)
+
+    for eventObject in events:
+        id = eventObject.event.id
+
+        event = {
+            'eventId': eventObject.event.id,
+            'eventName': eventObject.event.name,
+            'eventVenue': eventObject.event.venue,
+            'timeZone': eventObject.event.time_zone,
+            'openDate': eventObject.event.open_date,
+            'marketCount': eventObject.market_count,
+            'countryCode': cc
+        }
 
 
 def main():

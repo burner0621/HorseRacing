@@ -1,6 +1,3 @@
 {
-    "username": "root",
-    "password": "shjfrkajQWE123!@#",
-    "dbname": "betfair",
-    "host": "localhost"
+    "mongoUri": "mongodb://localhost:27017/horse-racing-betfair"
 }
