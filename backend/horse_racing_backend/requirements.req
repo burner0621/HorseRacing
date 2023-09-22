@@ -2,3 +2,6 @@ betfairlightweight
 pandas
 numpy
 mysql-connector-python
+pytz
+flask_cors
+flask

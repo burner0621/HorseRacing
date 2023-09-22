@@ -2,6 +2,11 @@ certs/*
 config/credentials.json
 config/db.json
 
+logs
+logs/*
+
 controllers/__pycache__
 routers/__pycache__
 utils/__pycache__
+betfairs/__pycache__
+models/__pycache__

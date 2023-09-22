@@ -1,8 +1,14 @@
+from utils import getCountryCode, getTimeRageInADay
+from utils.constants import *
 import betfairlightweight
-from flask import request
 import pandas as pd
 from .controller import Controller
+from datetime import datetime
 import json
+import pytz
+
+import sys
+sys.path.append('..')
 
 
 class BasicController(Controller):
@@ -10,52 +16,104 @@ class BasicController(Controller):
     def __init__(self):
         super().__init__()
 
-    def getEventsInToday(self):
-        if request.method == 'POST':
-            countryCode = request.json['countryCode']
-            eventTypeIds = request.json['eventTypeIds']
-            endTime = request.json['endTime']
-            print(eventTypeIds, len(eventTypeIds), "eventTypeIds")
-        countryCode = 'au'
+    def getEventsInToday(self, eventTypeIds, timeZone):
+        if timeZone is None or len(timeZone.strip()) == 0:
+            return {
+                "success": False,
+                "msg": "Time zone parameter should be not empty. Check this parameter again."
+            }
+        if timeZone not in pytz.all_timezones:
+            return {
+                "success": False,
+                "msg": "Time zone parameter is invalid."
+            }
+        if eventTypeIds is None or len(eventTypeIds) == 0:
+            return {
+                "success": False,
+                "msg": "Event type id array parameter should be not empty. Check this parameter again."
+            }
+
+        countryCode = getCountryCode(timeZone)
+        if countryCode is None:
+            return {
+                "success": False,
+                "msg": "Time Zone parameter is wrong. Please enter the correct time zone."
+            }
+
         cList = self.getCountries()
-        countryCode = countryCode.upper()
-        if countryCode not in cList['Country'].tolist():
+        if countryCode not in [country[COUNTRY] for country in cList]:
             return {"success": False, "msg": "CountryCode is wrong."}
 
-        events = self.getEvents(countryCode, eventTypeIds, endTime)
-        print(len(events.values.tolist()))
+        [startTime, endTime] = getTimeRageInADay(timeZone)
+        events = self.getEvents(countryCode, eventTypeIds,
+                                # "2023-09-22T23:59:59Z")
+                                endTime.strftime("%Y-%m-%dT%H:%M:%SZ"))
+        eList = []
+        for event in events:
+            trs = self.getTimeRanges([event[EVENT_VENUE]], 'MINUTES')
+            tmp = []
+            for tr in trs:
+                if (endTime - datetime.strptime(tr['from'], "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=pytz.UTC)).seconds < 0:
+                    continue
+                tmp.append(tr)
+            event['Time Ranges'] = tmp
+            eList.append(event)
+
         return {
             "success": True,
-            "data": events.values.tolist()
+            "data": eList
         }
 
     def getCountries(self):
         countries = self.trading.betting.list_countries()
-        countries = pd.DataFrame({
-            'Country': [countryResult.country_code for countryResult in countries],
-            'MarketCount': [countryResult.market_count for countryResult in countries]
-        })
-        return countries
+
+        cList = [{'Country': countryResult.country_code,
+                  'MartketCount': countryResult.market_count} for countryResult in countries]
+
+        return cList
 
     def getEvents(self, countryCode, eventTypeIds, endTime):
         mf = self.makeMarketFilter(
-            marketCountries = [countryCode],
-            eventTypeIds = eventTypeIds,
-            marketStartTime = {
+            marketCountries=[countryCode],
+            eventTypeIds=eventTypeIds,
+            marketStartTime={
                 "to": endTime
             }
         )
         eventsToday = self.trading.betting.list_events(filter=mf)
-        eventsTodayObj = pd.DataFrame({
-            'Event Name': [eventObject.event.name for eventObject in eventsToday],
-            'Event ID': [eventObject.event.id for eventObject in eventsToday],
-            'Event Venue': [eventObject.event.venue for eventObject in eventsToday],
-            'Country Code': [eventObject.event.country_code for eventObject in eventsToday],
-            'Time Zone': [eventObject.event.time_zone for eventObject in eventsToday],
-            'Open Date': [eventObject.event.open_date for eventObject in eventsToday],
-            'Market Count': [eventObject.market_count for eventObject in eventsToday]
-        })
+
+        eventsTodayObj = [{'Event Name': eventObject.event.name,
+                           'Event ID': eventObject.event.id,
+                           'Event Venue': eventObject.event.venue,
+                           'Country Code': eventObject.event.country_code,
+                           'Time Zone': eventObject.event.time_zone,
+                           'Open Date': eventObject.event.open_date,
+                           'Market Count': eventObject.market_count} for eventObject in eventsToday]
+
         return eventsTodayObj
+
+    def getTimeRanges(self, venues, granularity):
+        mf = self.makeMarketFilter(
+            venues=venues,
+        )
+        timeRanges = self.trading.betting.list_time_ranges(
+            filter=mf, granularity=granularity)
+        timeRangeObj = [{
+            'from': trObject['_data']['timeRange']['from'],
+            'to': trObject['_data']['timeRange']['to'],
+            'marketCount': trObject['_data']['marketCount']} for trObject in timeRanges]
+        return timeRangeObj
+    
+    def getProfitAndLoss(self, marketIds, includeBspBets, includeSettledBets):
+        pl = self.trading.betting.list_market_profit_and_loss(market_ids=marketIds, 
+                                                 include_bsp_bets=includeBspBets, 
+                                                 include_settled_bets=includeSettledBets)
+        print (len (pl))
+        try:
+            pl_df = pd.DataFrame(pl[0]._data['profitAndLosses']).assign(marketId=pl[0].market_id)
+            print (pl_df, ">>>>>")
+        except Exception as e:
+            print ("getProfitAndLoss ===> ", e)
 
     def makeMarketFilter(
             self,
