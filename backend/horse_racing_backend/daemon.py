@@ -1,12 +1,13 @@
 
 import pandas as pd
-import numpy as np
 import os
-import datetime
+import time
 import json
 
 from betfairs.trading import tradingObj
 from utils.logging import daemonLogger
+
+from models.dbManager import dbManager
 
 def connectDatabase():
     from mongoengine import connect
@@ -19,18 +20,24 @@ def connectDatabase():
             username = dbConfig['username']
             password = dbConfig['password']
         try:
-            connect (db=dbname, username=username, password=password, host="mongodb://%s:%s@%s:%d/%s" %(username, password, host, port, dbname))
+            connect (db=dbname, username=username, password=password, host="mongodb://%s:%d/%s" %(host, port, dbname))
             daemonLogger.info("===   Database Connection successful.   ===")
         except Exception as e:
-            daemonLogger.debug(f"Database connection failed.", exc_info=True)
+            daemonLogger.error(f"Database connection failed.", exc_info=True)
             return
     except Exception as e:
-        daemonLogger.debug(f"config/db.json file read failed.", exc_info=True)
+        daemonLogger.error(f"config/db.json file read failed.", exc_info=True)
         return
+
+def daemonProcess(interval):
+    while True:
+        events = tradingObj.getEvents('au', [7])
+        dbManager.eventCol.saveList (events)
+        time.sleep(interval)
 
 def main():
     connectDatabase()
-    print (tradingObj.getCountries())
+    daemonProcess (15)
 
 if __name__ == "__main__":
     main()

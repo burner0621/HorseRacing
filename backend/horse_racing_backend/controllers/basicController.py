@@ -1,68 +1,38 @@
-from utils import getCountryCode, getTimeRageInADay
-from utils.constants import *
+from flask import jsonify
 import betfairlightweight
 import pandas as pd
 from .controller import Controller
 from datetime import datetime
-import json
-import pytz
-
+from bson import json_util
 import sys
 sys.path.append('..')
-
+from models.dbManager import dbManager
+from utils.JSONEncoder import JSONEncoder
+from utils.constants import *
 
 class BasicController(Controller):
 
     def __init__(self):
         super().__init__()
 
-    def getEventsInToday(self, eventTypeIds, timeZone):
-        if timeZone is None or len(timeZone.strip()) == 0:
-            return {
-                "success": False,
-                "msg": "Time zone parameter should be not empty. Check this parameter again."
-            }
-        if timeZone not in pytz.all_timezones:
-            return {
-                "success": False,
-                "msg": "Time zone parameter is invalid."
-            }
+    def getEvents(self, betDate, eventTypeIds, countryCode):
         if eventTypeIds is None or len(eventTypeIds) == 0:
             return {
                 "success": False,
                 "msg": "Event type id array parameter should be not empty. Check this parameter again."
             }
+        
+        eList = dbManager.eventCol.getDocuments (betDate, eventTypeIds, countryCode)
+        data = []
+        for e in eList:
+            e['_id'] = str(e['_id'])
+            data.append (e)
+        # data = jsonify(data=[JSONEncoder().encode(doc) for doc in list(eList)])
 
-        countryCode = getCountryCode(timeZone)
-        if countryCode is None:
-            return {
-                "success": False,
-                "msg": "Time Zone parameter is wrong. Please enter the correct time zone."
-            }
-
-        cList = self.getCountries()
-        if countryCode not in [country[COUNTRY] for country in cList]:
-            return {"success": False, "msg": "CountryCode is wrong."}
-
-        [startTime, endTime] = getTimeRageInADay(timeZone)
-        events = self.getEvents(countryCode, eventTypeIds,
-                                # "2023-09-22T23:59:59Z")
-                                endTime.strftime("%Y-%m-%dT%H:%M:%SZ"))
-        eList = []
-        for event in events:
-            trs = self.getTimeRanges([event[EVENT_VENUE]], 'MINUTES')
-            tmp = []
-            for tr in trs:
-                if (endTime - datetime.strptime(tr['from'], "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=pytz.UTC)).seconds < 0:
-                    continue
-                tmp.append(tr)
-            event['Time Ranges'] = tmp
-            eList.append(event)
-
-        return {
+        return json_util.dumps({
             "success": True,
-            "data": eList
-        }
+            "data": data
+        })
 
     def getCountries(self):
         countries = self.trading.betting.list_countries()
@@ -71,26 +41,6 @@ class BasicController(Controller):
                   'MartketCount': countryResult.market_count} for countryResult in countries]
 
         return cList
-
-    def getEvents(self, countryCode, eventTypeIds, endTime):
-        mf = self.makeMarketFilter(
-            marketCountries=[countryCode],
-            eventTypeIds=eventTypeIds,
-            marketStartTime={
-                "to": endTime
-            }
-        )
-        eventsToday = self.trading.betting.list_events(filter=mf)
-
-        eventsTodayObj = [{'Event Name': eventObject.event.name,
-                           'Event ID': eventObject.event.id,
-                           'Event Venue': eventObject.event.venue,
-                           'Country Code': eventObject.event.country_code,
-                           'Time Zone': eventObject.event.time_zone,
-                           'Open Date': eventObject.event.open_date,
-                           'Market Count': eventObject.market_count} for eventObject in eventsToday]
-
-        return eventsTodayObj
 
     def getTimeRanges(self, venues, granularity):
         mf = self.makeMarketFilter(
@@ -108,10 +58,8 @@ class BasicController(Controller):
         pl = self.trading.betting.list_market_profit_and_loss(market_ids=marketIds, 
                                                  include_bsp_bets=includeBspBets, 
                                                  include_settled_bets=includeSettledBets)
-        print (len (pl))
         try:
             pl_df = pd.DataFrame(pl[0]._data['profitAndLosses']).assign(marketId=pl[0].market_id)
-            print (pl_df, ">>>>>")
         except Exception as e:
             print ("getProfitAndLoss ===> ", e)
 

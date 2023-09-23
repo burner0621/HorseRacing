@@ -7,3 +7,7 @@ logging.config.fileConfig(fname='config/logging.conf', disable_existing_loggers=
 
 daemonLogger = logging.getLogger("daemon.py")
 tradingLogger = logging.getLogger("betfairs/trading")
+dbLogger = logging.getLogger("models/dbManager")
+colManagerLogger = logging.getLogger("models/colManager")
+eventLogger = logging.getLogger("models/event")
+utilsLogger = logging.getLogger("utils")

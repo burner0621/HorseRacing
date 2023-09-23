@@ -1,6 +1,6 @@
 import betfairlightweight
 import json
-
+    
 class Controller:
     def __init__(self):
         try:

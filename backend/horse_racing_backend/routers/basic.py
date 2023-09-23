@@ -7,9 +7,8 @@ from controllers.basicController import BasicController
 
 basicController = BasicController()
 
-@basicRouter.route ('/get_events_in_today/', methods=["POST"])
-def get_events_in_today():
-    if request.method == 'POST':
-        eventTypeIds = request.json['eventTypeIds']
-        timeZone = request.json['timeZone']
-        return basicController.getEventsInToday (eventTypeIds, timeZone)
+@basicRouter.route ('/get_events/', methods=["GET"])
+def get_events():
+    if request.method == 'GET':
+        betDate = request.args.get('date')
+        return basicController.getEvents (betDate, [7], 'AU')
