@@ -1,16 +1,16 @@
 from flask import Flask
-from flask_cors import CORS, cross_origin
-from routers.basic import basicRouter
+from flask_cors import CORS
+from routers import api
 import json
-
 
 def main():
     app = Flask(__name__)
-    cors = CORS(app)
-    app.config['CORS_HEADERS'] = 'application/json'
+    api.init_app(app)
 
-    app.register_blueprint(basicRouter, url_prefix='/api/basic')
-    
+    CORS(app, supports_credentials=True)
+    app.config['CORS_HEADERS'] = 'Content-Type'
+    app.config['CORS_RESOURCES'] = {r"*": {"origins": "*"}}
+
     global host, port
     host = "0.0.0.0"
     port = 5555

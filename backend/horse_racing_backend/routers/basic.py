@@ -1,14 +1,18 @@
 import sys
-from flask import Blueprint,request
+from flask_restx import Namespace, Resource, fields
 
-basicRouter = Blueprint('basic', __name__)
+api = Namespace('api/basic', description='Basic controllers')
 sys.path.append("..")
 from controllers.basicController import BasicController
 
 basicController = BasicController()
 
-@basicRouter.route ('/get_events/', methods=["GET"])
-def get_events():
-    if request.method == 'GET':
-        betDate = request.args.get('date')
-        return basicController.getEvents (betDate, [7], 'AU')
+@api.route ('/events/<date>')
+class EventList(Resource):
+    def get(self, date):
+        return basicController.getEvents (date.strip(), [7], 'AU')
+
+@api.route ('/events/bankroll/<date>')
+class Bankroll(Resource):
+    def get(self, date):
+        return basicController.getBankrollInDay(date)

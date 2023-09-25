@@ -10,3 +10,5 @@ routers/__pycache__
 utils/__pycache__
 betfairs/__pycache__
 models/__pycache__
+
+test.py

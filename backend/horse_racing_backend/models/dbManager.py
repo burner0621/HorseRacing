@@ -2,6 +2,7 @@ import pymongo
 import json
 
 from .event import Event
+from .marketBook import MarketBook
 
 import sys
 sys.path.append ("..")
@@ -25,6 +26,7 @@ class DbManager:
                 self.database = self.client[dbname]
                 dbLogger.info("===   Database Connection successful.   ===")
                 self.eventCol = Event(self.database)
+                self.marketBookCol = MarketBook(self.database)
             except Exception as e:
                 dbLogger.error(f"Database connection failed.", exc_info=True)
                 return

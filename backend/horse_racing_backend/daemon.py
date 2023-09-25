@@ -3,7 +3,8 @@ import pandas as pd
 import os
 import time
 import json
-
+from datetime import datetime
+import threading
 from betfairs.trading import tradingObj
 from utils.logging import daemonLogger
 
@@ -29,15 +30,30 @@ def connectDatabase():
         daemonLogger.error(f"config/db.json file read failed.", exc_info=True)
         return
 
-def daemonProcess(interval):
+def daemonSaveEvent(interval):
     while True:
         events = tradingObj.getEvents('au', [7])
         dbManager.eventCol.saveList (events)
         time.sleep(interval)
 
+def daemonSaveMarketBook(interval):
+    while True:
+        events = dbManager.eventCol.getDocumentsByFromDate (datetime.utcnow().strftime("%Y-%m-%d"), [7], "AU")
+        for event in events:
+            for market in event['markets']:
+                marketBooks = tradingObj.getMarketBooks ([market['marketId']])
+                if len(marketBooks) > 0:
+                    marketBook = marketBooks [0]
+                    if marketBook['status'] == 'OPEN':
+                        dbManager.marketBookCol.insert (marketBook)
+        time.sleep (interval)
+
 def main():
     connectDatabase()
-    daemonProcess (15)
+    saveEvent = threading.Thread(target=daemonSaveEvent, args=(15,))
+    saveMarketBook = threading.Thread(target=daemonSaveMarketBook, args=(5,))
+    saveEvent.start ()
+    saveMarketBook.start ()
 
 if __name__ == "__main__":
     main()

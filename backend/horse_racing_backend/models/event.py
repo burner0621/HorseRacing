@@ -15,25 +15,51 @@ class Event(ColManager):
         for d in dList:
             eventCount = self.manager.count_documents ({"eventId": d["eventId"]})
             if (eventCount > 0):
-                eventId = d['eventId']
-                del d['eventId']
+                updateObj = {}
+                if len(d['eventVenue']) > 0: updateObj['eventVenue'] = d['eventVenue']
+                if len(d['timeZone']) > 0: updateObj['timeZone'] = d['timeZone']
+                if d['openDate'] is not None: updateObj['openDate'] = d['openDate']
+                if len(d['countryCode']) > 0: updateObj['countryCode'] = d['countryCode']
+                
+                eventDocument = self.manager.find_one ({"eventId": d["eventId"]})
+                updateMarkets = eventDocument['markets']
+                addMarkets = []
+                for market in d['markets']:
+                    flg = False
+                    for marketDocument in updateMarkets:
+                        if marketDocument['marketId'] == market['marketId']:
+                            marketDocument = market['marketId']
+                            flg = True
+                            break
+                    if flg == False: addMarkets.append (marketDocument)
+                
+                updateObj['markets'] = updateMarkets + addMarkets
+
                 self.manager.update_one(
-                    {"eventId": eventId},
-                    {"$set": d}
+                    {"eventId": d['eventId']},
+                    {"$set": updateObj}
                 )
             else:
                 self.manager.insert_one (d)
     
-    def getDocuments(self, dateStr, eventTypeIds, countryCode):
+    def getDocumentsByDate(self, dateStr, eventTypeIds, countryCode):
         [minDate, maxDate] = getTimeRangeOfCountry(dateStr, countryCode.upper())
-        print (minDate, maxDate, ">>>>>>>")
+        events = self.manager.find ({
+            "eventVenue": {"$ne": ""},
+            "countryCode": countryCode.upper(),
+            "markets.marketStartTime": {"$gt": minDate, "$lt": maxDate},
+        })
+        return list(events)
+
+    def getDocumentsByFromDate(self, dateStr, eventTypeIds, countryCode):
+        [minDate, maxDate] = getTimeRangeOfCountry(dateStr, countryCode.upper())
         events = self.manager.find ({
             "eventVenue": {"$ne": ""},
             "countryCode": countryCode.upper(),
             "markets.marketStartTime": {"$gt": minDate},
-            "markets.marketStartTime": {"$lt": maxDate},
         })
-        return (list(events))
+
+        return list(events)
 
 # class Competition(EmbeddedDocument):
 #     id = IntField(required = True)

@@ -112,6 +112,9 @@ class Trading:
                             tmpRunners.append (runner)
 
                     tmp['runners'] = tmpRunners
+                
+                marketBooks = self.getMarketBooks ([tmp['marketId']])
+                tmp['marketBook'] = marketBooks[0]
                 rlt.append (tmp)
             return rlt
         except Exception as e:
@@ -147,7 +150,7 @@ class Trading:
                     'markets': []
                 }
 
-                martketCatalogues = self.getListMarketCatalog (50, [event['eventId']])
+                martketCatalogues = self.getListMarketCatalog (eventObject.market_count, [event['eventId']])
                 event['markets'] = martketCatalogues
 
                 rlt.append (event)
@@ -188,6 +191,108 @@ class Trading:
             tradingLogger.error ("getMarketProfitAndLoss() called failed.", exc_info=True)
             return None
 
+    def getMarketBooks (self, marketIds):
+        try:
+            priceFilter = self.getPriceFilter (['EX_BEST_OFFERS', 'SP_AVAILABLE', 'SP_TRADED', 'EX_ALL_OFFERS', 'EX_TRADED'])
+            marketBooks = self.trading.betting.list_market_book (market_ids = marketIds, price_projection=priceFilter)
+            marketBooksList = []
+            for marketBook in marketBooks:
+                tmp = {}
+                tmp['betDelay'] = marketBook.bet_delay if marketBook.bet_delay is not None else 0
+                tmp['bspReconciled'] = marketBook.bsp_reconciled if marketBook.bsp_reconciled is not None else None
+                tmp['complete'] = marketBook.complete if marketBook.complete is not None else None
+                tmp['crossMatching'] = marketBook.cross_matching if marketBook.cross_matching is not None else None
+                tmp['inplay'] = marketBook.inplay if marketBook.inplay is not None else None
+                tmp['isMarketDataDelayed'] = marketBook.is_market_data_delayed if marketBook.is_market_data_delayed is not None else None
+                tmp['lastMatchTime'] = marketBook.last_match_time if marketBook.last_match_time is not None else None
+                tmp['marketId'] = marketBook.market_id if marketBook.market_id is not None else ''
+                tmp['numbersOfActiveRunners'] = marketBook.number_of_active_runners if marketBook.number_of_active_runners is not None else 0
+                tmp['numbersOfWinners'] = marketBook.number_of_winners if marketBook.number_of_winners is not None else 0
+                tmp['numbersOfRunners'] = marketBook.number_of_runners if marketBook.number_of_runners is not None else 0
+                tmp['publishTime'] = marketBook.publish_time if marketBook.publish_time is not None else None
+                tmp['runnersVoidable'] = marketBook.runners_voidable if marketBook.runners_voidable is not None else None
+                tmp['status'] = marketBook.status if marketBook.status is not None else ''
+                tmp['totalAvailable'] = marketBook.total_available if marketBook.total_available is not None else 0
+                tmp['totalMatched'] = marketBook.total_matched if marketBook.total_matched is not None else 0
+                tmp['version'] = marketBook.version if marketBook.version is not None else 0
+
+                if marketBook.runners is not None:
+                    runners = []
+                    for runner in marketBook.runners:
+                        tmpRunner = {}
+                        tmpRunner['adjustmentFactor'] = runner.adjustment_factor if runner.adjustment_factor is not None else 0
+                        tmpRunner['handicap'] = runner.handicap if runner.handicap is not None else 0
+                        tmpRunner['lastPriceTraded'] = runner.last_price_traded if runner.last_price_traded is not None else 0
+                        tmpRunner['removalDate'] = runner.removal_date if runner.removal_date is not None else None
+                        tmpRunner['selectionId'] = runner.selection_id if runner.selection_id is not None else 0
+                        tmpRunner['status'] = runner.status if runner.status is not None else 0
+                        tmpRunner['totalMatched'] = runner.total_matched if runner.total_matched is not None else 0
+                        tmpRunner['ex'] = {
+                            'availableToBack':[{
+                                "price": atb.price,
+                                "size": atb.size
+                            } for atb in runner.ex.available_to_back] if runner.ex.available_to_back is not None or len(runner.ex.available_to_back) == 0 else [],
+                            'availableToLay':[{
+                                "price": atl.price,
+                                "size": atl.size
+                            } for atl in runner.ex.available_to_lay] if runner.ex.available_to_lay is not None or len(runner.ex.available_to_lay) == 0 else [],
+                            'tradedVolume':[{
+                                "price": tv.price,
+                                "size": tv.size
+                            } for tv in runner.ex.traded_volume] if runner.ex.traded_volume is not None or len(runner.ex.traded_volume) == 0 else [],
+                        } if runner.ex is not None else {}
+                        tmpRunner['sp'] = {
+                            'actualSp': runner.sp.actual_sp if runner.sp.actual_sp is not None else 0,
+                            'farPrice': runner.sp.far_price if runner.sp.far_price is not None else 0,
+                            'nearPrice': runner.sp.near_price if runner.sp.near_price is not None else 0,
+                            'backStakeTaken': [{
+                                "price": bst.price,
+                                "size": bst.size
+                            } for bst in runner.sp.back_stake_taken] if runner.sp.back_stake_taken is not None or len(runner.sp.back_stake_taken) == 0 else [],
+                            'layLiabilityTaken': [{
+                                "price": llt.price,
+                                "size": llt.size
+                            } for llt in runner.sp.lay_liability_taken] if runner.sp.lay_liability_taken is not None or len(runner.sp.lay_liability_taken) == 0 else [],
+                        } if runner.sp is not None else {}
+                        tmpRunner['matches'] = [{
+                            "betId": rbm.bet_id if rbm.bet_id is not None else '',
+                            "matchDate": rbm.match_date,
+                            "matchId": rbm.match_id if rbm.match_id is not None else '',
+                            "price": rbm.price if rbm.price is not None else 0,
+                            "side": rbm.side if rbm.side is not None else '',
+                            "size": rbm.size if rbm.size is not None else 0,
+                        } for rbm in runner.matches] if runner.matches is not None or len(runner.matches) == 0 else []
+                        tmpRunner['orders'] = [{
+                            "avgPriceMatched": rbo.avg_price_matched if rbo.avg_price_matched is not None else 0,
+                            "betId": rbo.bet_id if rbo.bet_id is not None else '',
+                            "bspLiability": rbo.bsp_liability if rbo.bsp_liability is not None else 0,
+                            "orderType": rbo.order_type if rbo.order_type is not None else '',
+                            "persistenceType": rbo.persistence_type if rbo.persistence_type is not None else '',
+                            "placedDate": rbo.placed_date if rbo.placed_date is not None else None,
+                            "price": rbo.price if rbo.price is not None else 0,
+                            "side": rbo.side if rbo.side is not None else '',
+                            "sizeCancelled": rbo.size_cancelled if rbo.size_cancelled is not None else None,
+                            "sizeLapsed": rbo.size_lapsed if rbo.size_lapsed is not None else 0,
+                            "sizeMatched": rbo.size_matched if rbo.size_matched is not None else 0,
+                            "sizeRemaining": rbo.size_remaining if rbo.size_remaining is not None else 0,
+                            "sizeVoided": rbo.size_voided if rbo.size_voided is not None else 0,
+                            "status": rbo.status if rbo.status is not None else '',
+                        } for rbo in runner.orders] if runner.orders is not None or len(runner.orders) == 0 else []
+
+                        runners.append (tmpRunner)
+                    tmp['runners'] = runners
+
+                marketBooksList.append (tmp)
+            return marketBooksList
+        except Exception as e:
+            tradingLogger.error ("getMarketBooks() function call failed.", exc_info=True)
+            return []
+
+    def getPriceFilter (self, priceData):
+        return betfairlightweight.filters.price_projection (
+            price_data=priceData,
+        )
+    
     def makeMarketFilter(
             self,
             textQuery=None,
