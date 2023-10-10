@@ -11,4 +11,12 @@ utils/__pycache__
 betfairs/__pycache__
 models/__pycache__
 
+data
+data/mr_fields
+data/mr_form
+data/mr_fields/*.xml
+data/mr_form/*.xml
+
 test.py
+test.json
+*/*/*.xml

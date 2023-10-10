@@ -24,10 +24,10 @@ def connectDatabase():
             connect (db=dbname, username=username, password=password, host="mongodb://%s:%d/%s" %(host, port, dbname))
             daemonLogger.info("===   Database Connection successful.   ===")
         except Exception as e:
-            daemonLogger.error(f"Database connection failed.", exc_info=True)
+            daemonLogger.error("Database connection failed.", exc_info=True)
             return
     except Exception as e:
-        daemonLogger.error(f"config/db.json file read failed.", exc_info=True)
+        daemonLogger.error("config/db.json file read failed.", exc_info=True)
         return
 
 def daemonSaveEvent(interval):

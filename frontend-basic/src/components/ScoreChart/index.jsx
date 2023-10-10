@@ -54,10 +54,12 @@ const options = {
       grid: {
         display: true,
         color: "#98A2B3",
+        offset: false,
       },
       border: {
         dash: [5, 5],
         color: "#667085",
+        offset: 5
       },
       beginAtZero: false,
       ticks: {

@@ -227,6 +227,7 @@ class Trading:
                         tmpRunner['selectionId'] = runner.selection_id if runner.selection_id is not None else 0
                         tmpRunner['status'] = runner.status if runner.status is not None else 0
                         tmpRunner['totalMatched'] = runner.total_matched if runner.total_matched is not None else 0
+                        print (len(runner.ex.available_to_back), len(runner.ex.available_to_lay), len(runner.ex.traded_volume))
                         tmpRunner['ex'] = {
                             'availableToBack':[{
                                 "price": atb.price,
