@@ -2,7 +2,11 @@ import pymongo
 import json
 
 from .event import Event
+from .track import Track
+from .horse import Horse
+from .race import Race
 from .marketBook import MarketBook
+from .marketIds import MarketIds
 
 import sys
 sys.path.append ("..")
@@ -19,14 +23,16 @@ class DbManager:
                 dbname = dbConfig['dbname']
                 host = dbConfig['host']
                 port = dbConfig['port']
-                username = dbConfig['username']
-                password = dbConfig['password']
             try:
                 self.client = pymongo.MongoClient ("mongodb://%s:%d" %(host, port))
                 self.database = self.client[dbname]
                 dbLogger.info("===   Database Connection successful.   ===")
                 self.eventCol = Event(self.database)
+                self.trackCol = Track(self.database)
+                self.horseCol = Horse(self.database)
+                self.raceCol = Race(self.database)
                 self.marketBookCol = MarketBook(self.database)
+                self.marketIdsCol = MarketIds (self.database)
             except Exception as e:
                 dbLogger.error(f"Database connection failed.", exc_info=True)
                 return

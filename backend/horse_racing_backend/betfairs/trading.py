@@ -1,6 +1,5 @@
 # Import libraries
 import betfairlightweight
-from betfairlightweight import filters
 import pandas as pd
 import json
 
@@ -77,7 +76,8 @@ class Trading:
                         'rulesHasDate': mc.description.rules_has_date if mc.description.rules_has_date is not None else None, #bool
                         'suspendTime': mc.description.suspend_time if mc.description.suspend_time is not None else None,
                         'turnInPlayEenabled': mc.description.turn_in_play_enabled if mc.description.turn_in_play_enabled is not None else None, #bool
-                        'wallet': mc.description.wallet if mc.description.wallet is not None else ''
+                        'wallet': mc.description.wallet if mc.description.wallet is not None else '',
+                        'raceType': mc.description.race_type if mc.description.race_type is not None else ''
                     }
                 }
                 if mc.competition is not None:
@@ -134,9 +134,10 @@ class Trading:
             mf = self.makeMarketFilter(
                     marketCountries=[cc],
                     eventTypeIds=eventTypeIds,
+                    marketTypeCodes=['WIN']
                 )
             events = self.trading.betting.list_events(filter=mf)
-
+            print (len(events))
             rlt = []
             for eventObject in events:
                 event = {
@@ -195,6 +196,11 @@ class Trading:
         try:
             priceFilter = self.getPriceFilter (['EX_BEST_OFFERS', 'SP_AVAILABLE', 'SP_TRADED', 'EX_ALL_OFFERS', 'EX_TRADED'])
             marketBooks = self.trading.betting.list_market_book (market_ids = marketIds, price_projection=priceFilter)
+            return self.convertMarketBookToData (marketBooks)
+        except Exception as e:
+            return []
+    def convertMarketBookToData (self, marketBooks):
+        try:
             marketBooksList = []
             for marketBook in marketBooks:
                 tmp = {}
@@ -216,6 +222,33 @@ class Trading:
                 tmp['totalMatched'] = marketBook.total_matched if marketBook.total_matched is not None else 0
                 tmp['version'] = marketBook.version if marketBook.version is not None else 0
 
+                if marketBook.streaming_update is not None:
+                    su = marketBook.streaming_update
+                    tmp['rc'] = su['rc'] if 'rc' in su else {}
+
+                if marketBook.market_definition is not None:
+                    md = marketBook.market_definition
+                    tmpMd = {}
+                    tmpMd['bettingType'] = md.betting_type if md.betting_type is not None else ''
+                    tmpMd['bspMarket'] = md.bsp_market if md.bsp_market is not None else None
+                    tmpMd['discountAllowed'] = md.bsp_market if md.discount_allowed is not None else None
+                    tmpMd['eventId'] = md.event_id if md.event_id is not None else 0
+                    tmpMd['eventTypeId'] = md.event_id if md.event_type_id is not None else 0
+                    tmpMd['marketBaseRate'] = md.market_base_rate if md.market_base_rate is not None else 0
+                    tmpMd['marketTime'] = md.market_time if md.market_time is not None else None
+                    tmpMd['marketType'] = md.market_type if md.market_type is not None else ''
+                    tmpMd['openDate'] = md.open_date if md.open_date is not None else None
+                    tmpMd['persistenceEnabled'] = md.persistence_enabled if md.persistence_enabled is not None else None
+                    tmpMd['regulators'] = md.regulators if md.regulators is not None else ''
+                    tmpMd['settledTime'] = md.settled_time if md.settled_time is not None else None
+                    tmpMd['suspendTime'] = md.suspend_time if md.suspend_time is not None else None
+                    tmpMd['timezone'] = md.timezone if md.timezone is not None else ''
+                    tmpMd['turnInPlayEnabled'] = md.turn_in_play_enabled if md.turn_in_play_enabled is not None else None
+                    tmpMd['venue'] = md.venue if md.venue is not None else ''
+                    tmpMd['raceType'] = md.race_type if md.race_type is not None else ''
+
+                    tmp['marketDefinition'] = tmpMd
+
                 if marketBook.runners is not None:
                     runners = []
                     for runner in marketBook.runners:
@@ -225,9 +258,8 @@ class Trading:
                         tmpRunner['lastPriceTraded'] = runner.last_price_traded if runner.last_price_traded is not None else 0
                         tmpRunner['removalDate'] = runner.removal_date if runner.removal_date is not None else None
                         tmpRunner['selectionId'] = runner.selection_id if runner.selection_id is not None else 0
-                        tmpRunner['status'] = runner.status if runner.status is not None else 0
+                        tmpRunner['status'] = runner.status if runner.status is not None else ''
                         tmpRunner['totalMatched'] = runner.total_matched if runner.total_matched is not None else 0
-                        print (len(runner.ex.available_to_back), len(runner.ex.available_to_lay), len(runner.ex.traded_volume))
                         tmpRunner['ex'] = {
                             'availableToBack':[{
                                 "price": atb.price,
@@ -333,6 +365,5 @@ class Trading:
         except Exception as e:
             tradingLogger.error ("makeMarketFilter() failed.", exc_info=True)
             return None
-
 
 tradingObj = Trading ()
