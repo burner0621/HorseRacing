@@ -16,7 +16,7 @@ class Race(ColManager):
             cnt = self.manager.count_documents ({"track_id": race_obj['track_id'], "horse_id": race_obj['horse_id']})
             if cnt > 0:
                 self.manager.update_one(
-                    {"track_id": race_obj['track_id']},
+                    {"track_id": race_obj['track_id'], "horse_id": race_obj['horse_id']},
                     {"$set": race_obj}
                 )
             else:
@@ -27,4 +27,12 @@ class Race(ColManager):
     
     def getRacesByHorse(self, horse_id):
         races = list(self.manager.find({"horse_id": int(horse_id)}).sort("date", -1))
+        return races
+
+    def getRacesByTrainer(self, trainer_id):
+        races = list(self.manager.find({"trainer_id": int(trainer_id)}).sort("date", -1))
+        return races
+    
+    def getRacesByJockey(self, jockey_id):
+        races = list(self.manager.find({"jockey_id": int(jockey_id)}).sort("date", -1))
         return races

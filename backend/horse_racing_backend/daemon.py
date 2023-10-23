@@ -67,7 +67,7 @@ def daemonSaveXMLData():
 
 def main():
     connectDatabase()
-    saveEvent = threading.Thread(target=daemonSaveEvent, args=(15,))
+    saveEvent = threading.Thread(target=daemonSaveEvent, args=(30,))
     # saveMarketBook = threading.Thread(target=daemonSaveMarketBook, args=(15,))
     saveEvent.start ()
     # saveMarketBook.start ()

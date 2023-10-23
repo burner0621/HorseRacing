@@ -13,7 +13,9 @@ class MarketIds(ColManager):
     
     def saveData (self, marketIds):
         self.manager.delete_many ({})
-        self.manager.insert_one({'marketIds': marketIds})
+        if len(marketIds) > 0: self.manager.insert_one({'marketIds': marketIds})
     
     def getData (self):
-        return list(self.manager.find({}))
+        db = list(self.manager.find({}))
+        if db is None or len(db) == 0: return []
+        return list(db[0]['marketIds'])

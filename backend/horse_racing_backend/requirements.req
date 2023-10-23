@@ -6,3 +6,5 @@ flask_cors
 flask
 flask_restx
 pymongo
+mongoengine
+flask.scaffold

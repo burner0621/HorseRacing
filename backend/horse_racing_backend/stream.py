@@ -40,73 +40,65 @@ def connectDatabase():
 def feedStreamData():
 
     listener = StreamListener(output_queue=output_queue)
+    dbManager.marketIdsCol.saveData ([])
 
     while True:
-        # events = dbManager.eventCol.getDocumentsByFromDate (datetime.utcnow().strftime("%Y-%m-%d"), [7], "AU")
+        
+        dbMarketIds = dbManager.marketIdsCol.getData ()
+        marketIdSet = set(dbMarketIds)
+
         events = tradingObj.getEvents('au', [7])
         marketIds = []
         for event in events:
-            marketIds = [market['marketId'] for market in event['markets']]
-            # marketIdsDb = dbManager.marketIdsCol.getData ()
-            # if len (marketIdsDb) == 0: marketIds = tmp
-            # elif 'marketIds' not in marketIdsDb[0]: marketIds = tmp
-            # else:
-            #     for m in tmp:
-            #         if m not in list(marketIdsDb[0]['marketIds']):
-            #             marketIds.append (m)
-            print (marketIds)
-            if len(marketIds) == 0:
-                continue
-            
-            # dbManager.marketIdsCol.saveData (marketIds)
-            
-            for marketId in marketIds:
+            tmp = [market['marketId'] for market in event['markets']]
+            marketIds += tmp
+        
+        tmpSet = marketIdSet.copy()
+        marketIdSet.update (marketIds)
 
-                stream = tradingObj.trading.streaming.create_stream(listener=listener)
-                market_filter = streaming_market_filter(
-                    # market_ids=['1.219530316', '1.219530315', '1.219535798', '1.219535795']
-                    market_ids=[marketId]
-                )
-                market_data_filter = streaming_market_data_filter(
-                    fields=["SP_PROJECTED", "SP_PROJECTED", "EX_MARKET_DEF", "EX_BEST_OFFERS_DISP", "EX_BEST_OFFERS", "EX_ALL_OFFERS", "EX_TRADED", "EX_TRADED_VOL"], ladder_levels=3
-                )
-                try:
-                    streaming_unique_id = stream.subscribe_to_markets(
-                        market_filter=market_filter,
-                        market_data_filter=market_data_filter,
-                        conflate_ms=1000,  # send update every 1000ms
-                    )
-                    t = threading.Thread(target=stream.start, daemon=True)
-                    t.start()
-                    time.sleep (1)
-                    # t.stop()
-                    try:
-                        stream.stop()
-                    except:
-                        pass
-                except Exception as e:
-                    print (e)
-                time.sleep(0.5)
+        newMarketIds = marketIdSet - tmpSet
+
+        dbManager.marketIdsCol.saveData (list(marketIdSet))
+            
+
+        stream = tradingObj.trading.streaming.create_stream(listener=listener)
+        market_filter = streaming_market_filter(
+            market_ids=list(newMarketIds)
+        )
+        market_data_filter = streaming_market_data_filter(
+            fields=["SP_PROJECTED", "SP_PROJECTED", "EX_MARKET_DEF", "EX_BEST_OFFERS_DISP", "EX_BEST_OFFERS", "EX_ALL_OFFERS", "EX_TRADED", "EX_TRADED_VOL"], ladder_levels=3
+        )
+        try:
+            streaming_unique_id = stream.subscribe_to_markets(
+                market_filter=market_filter,
+                market_data_filter=market_data_filter,
+                conflate_ms=1000,  # send update every 1000ms
+            )
+            t = threading.Thread(target=stream.start, daemon=True)
+            t.start()
+        except Exception as e:
+            print (e)
         print ("finished feed......")
-        time.sleep (15)
+        time.sleep (3600)
 def getQueueData(): 
     while True:
         marketBooks = output_queue.get()
         
         mbs = tradingObj.convertMarketBookToData (marketBooks)
-        print (marketBooks[0]['marketId'], mbs[0]['runners'][0]['sp'], "FFFFFFFFFF")
 
         for marketBook in mbs:
             dbManager.marketBookCol.saveBook (marketBook)
             for runner in marketBook['runners']:
                 try:
                     print(
+                        runner['sp']['actualSp'],
                         runner['sp']['nearPrice'],
                         runner['sp']['farPrice'],
                         marketBook['marketId']
                     )
                 except:
                     pass
+        print ("########################################")
 
 
 def main():

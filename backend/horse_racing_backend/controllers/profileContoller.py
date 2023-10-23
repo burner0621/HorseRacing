@@ -24,3 +24,25 @@ class ProfileController(Controller):
 
                 rlt.append (race)
             return rlt
+        
+        if type == "trainer":
+            races = dbManager.raceCol.getRacesByTrainer(id)
+            rlt  = []
+            for race in races:
+                race['_id'] = str(race['_id'])
+                race['horse_foaling_date'] = race['horse_foaling_date'].strftime("%d/%m/%y")
+                race['date'] = race['date'].strftime("%d/%m/%y")
+
+                rlt.append (race)
+            return rlt
+        
+        if type == "jockey":
+            races = dbManager.raceCol.getRacesByJockey(id)
+            rlt  = []
+            for race in races:
+                race['_id'] = str(race['_id'])
+                race['horse_foaling_date'] = race['horse_foaling_date'].strftime("%d/%m/%y")
+                race['date'] = race['date'].strftime("%d/%m/%y")
+
+                rlt.append (race)
+            return rlt

@@ -285,11 +285,11 @@ def buildRaceProfile():
                         if child.tag == "jockey":
                             jockey = child.attrib
                             tmp['jockey_name'] = jockey['name']
-                            tmp['jockey_id'] = jockey['id']
+                            tmp['jockey_id'] = int(jockey['id'])
                         if child.tag == 'track':
                             track = child.attrib
                             tmp['track_name'] = track['name']
-                            tmp['track_id'] = track['id']
+                            tmp['track_id'] = int(track['id'])
                             tmp['track_location'] = track['location']
                             tmp['track_condition'] = track['condition']
                             try:

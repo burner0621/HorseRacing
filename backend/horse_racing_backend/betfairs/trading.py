@@ -137,7 +137,6 @@ class Trading:
                     marketTypeCodes=['WIN']
                 )
             events = self.trading.betting.list_events(filter=mf)
-            print (len(events))
             rlt = []
             for eventObject in events:
                 event = {
