@@ -37,13 +37,13 @@ def connectDatabase():
         streamLogger.error("config/db.json file read failed.", exc_info=True)
         return
 
-def feedStreamData():
+def feedStreamData(evt):
 
     listener = StreamListener(output_queue=output_queue)
     dbManager.marketIdsCol.saveData ([])
 
     while True:
-        
+        if evt.is_set(): break
         dbMarketIds = dbManager.marketIdsCol.getData ()
         marketIdSet = set(dbMarketIds)
 
@@ -103,11 +103,16 @@ def getQueueData():
 
 def main():
     connectDatabase()
-    # feedStreamData ()
-    feedStreamDataEvent = threading.Thread(target=feedStreamData)
-    feedStreamDataEvent.start()
+    
     getQueueDataEvent = threading.Thread(target=getQueueData)
     getQueueDataEvent.start()
+    while True:
+        evt = threading.Event ()
+        feedStreamDataEvent = threading.Thread(target=feedStreamData, args=(evt,))
+        feedStreamDataEvent.start()
+        # time.sleep (3600)
+        time.sleep (1800)
+        evt.set()
 
 if __name__ == "__main__":
     main()

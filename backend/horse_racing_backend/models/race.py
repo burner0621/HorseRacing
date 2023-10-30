@@ -26,13 +26,13 @@ class Race(ColManager):
             raceLogger.error ("saveTrack() failed.", exc_info=True)
     
     def getRacesByHorse(self, horse_id):
-        races = list(self.manager.find({"horse_id": int(horse_id)}).sort("date", -1))
+        races = list(self.manager.find({"horse_id": int(horse_id), "settling": {"$gt": 0}}).sort("date", -1))
         return races
 
     def getRacesByTrainer(self, trainer_id):
-        races = list(self.manager.find({"trainer_id": int(trainer_id)}).sort("date", -1))
+        races = list(self.manager.find({"trainer_id": int(trainer_id), "settling": {"$gt": 0}}).sort("date", -1))
         return races
     
     def getRacesByJockey(self, jockey_id):
-        races = list(self.manager.find({"jockey_id": int(jockey_id)}).sort("date", -1))
+        races = list(self.manager.find({"jockey_id": int(jockey_id), "settling": {"$gt": 0}}).sort("date", -1))
         return races

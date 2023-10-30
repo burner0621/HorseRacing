@@ -22,4 +22,4 @@ class RaceTrainerList(Resource):
 class RaceJockeyList(Resource):
     def get(self, jockey_id):
         print (jockey_id)
-        return profileController.getRaceList ("trainer", jockey_id)
+        return profileController.getRaceList ("jockey", jockey_id)

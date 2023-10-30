@@ -134,7 +134,7 @@ class Trading:
             mf = self.makeMarketFilter(
                     marketCountries=[cc],
                     eventTypeIds=eventTypeIds,
-                    marketTypeCodes=['WIN']
+                    # marketTypeCodes=['WIN']
                 )
             events = self.trading.betting.list_events(filter=mf)
             rlt = []

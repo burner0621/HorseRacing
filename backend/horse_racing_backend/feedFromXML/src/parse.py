@@ -277,7 +277,7 @@ def buildRaceProfile():
 
                     tmp['win_percentage'] = float(win_p.text) if win_p is not None else -1
                     tmp['place_percentage'] = float(place_p.text) if place_p is not None else -1
-                    
+
                     if form.getchildren() is None: continue
                     for child in form.getchildren():
                         if child.tag == "meeting_date": tmp['date'] = datetime.strptime(child.text, "%d/%m/%Y")
@@ -336,6 +336,15 @@ def buildRaceProfile():
                             tmp['time'] = float (t[1]) + 60 * float(t[0])
                         if child.tag == "event_prizemoney":
                             tmp['prizemoney_won'] = float(child.text)
+                        if child.tag == "horse_prizemoney":
+                            tmp['horse_prizemoney'] = float(child.text) if child.text is not None else -1
+                        if child.tag == "horse_prizemoney_bonus":
+                            tmp['horse_prizemoney_bonus'] = float(child.text) if child.text is not None else -1
+                        if child.tag == "classes":
+                            classId = child.find("class_id")
+                            className = child.find("class")
+                            tmp['class_id'] = int(classId.text) if classId is not None else -1
+                            tmp['class'] = className.text if className is not None else ''
                     
                     if 'starters' in tmp and 'settling' in tmp:
                         if tmp['settling'] > 0:

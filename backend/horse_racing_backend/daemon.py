@@ -32,8 +32,9 @@ def connectDatabase():
         daemonLogger.error("config/db.json file read failed.", exc_info=True)
         return
 
-def daemonSaveEvent(interval):
+def daemonSaveEvent(interval, event):
     while True:
+        if event.is_set(): break
         events = tradingObj.getEvents('au', [7])
         dbManager.eventCol.saveList (events)
         time.sleep(interval)
@@ -51,27 +52,25 @@ def daemonSaveMarketBook(interval):
         time.sleep (interval)
 
 def daemonSaveXMLData():
-    # xml_data_lst = parse ()
-    # for track in xml_data_lst:
-    #     dbManager.trackCol.saveTrack (track)
-
-    #     if len(track['races']) == 0: continue
-    #     for race in track['races']:
-    #         if len(race['horses']) == 0: continue
-    #         for horse in race['horses']:
-    #             dbManager.horseCol.saveHorse (horse)
-
     races = buildRaceProfile ()
     for race in races:
         dbManager.raceCol.saveRace (race)
 
 def main():
     connectDatabase()
-    saveEvent = threading.Thread(target=daemonSaveEvent, args=(30,))
-    # saveMarketBook = threading.Thread(target=daemonSaveMarketBook, args=(15,))
-    saveEvent.start ()
-    # saveMarketBook.start ()
+
     # daemonSaveXMLData ()
+
+    while True:
+        evt = threading.Event()
+        saveEvent = threading.Thread(target=daemonSaveEvent, args=(15,evt))
+        # saveMarketBook = threading.Thread(target=daemonSaveMarketBook, args=(15,))
+        saveEvent.start ()
+        time.sleep (3600)
+        evt.set ()
+        print (">>>>>>>")
+        time.sleep (30)
+        # saveMarketBook.start ()
 
 if __name__ == "__main__":
     main()

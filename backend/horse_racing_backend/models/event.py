@@ -57,6 +57,8 @@ class Event(ColManager):
             "eventVenue": {"$ne": ""},
             "countryCode": countryCode.upper(),
             "markets.marketStartTime": {"$gt": minDate},
+            "markets.marketCatalogueDescription.marketType": "WIN",
+            "markets.marketCatalogueDescription.raceType": {"$ne": "Harness"}
         })
 
         return list(events)
